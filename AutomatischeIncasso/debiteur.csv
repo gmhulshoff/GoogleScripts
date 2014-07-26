@@ -1,0 +1,4 @@
+instdamt,mndtid,seqtp,dtofsgntr,amdmntind,dbtrnm,dbtriban,dbtrustrd
+1.00,ETT00010v1,FRST,2013-12-11,false,D. Biteur,NL13TEST0123456789,Dit is testbericht 1
+2.00,ETT00011v1,RCUR,2013-12-12,false,D. Biteur,NL13TEST0123456789,Dit is testbericht 2
+3.00,ETT00011v1,RCUR,2013-12-12,false,QreaCom,NL13TEST0123456789,Dit is testbericht 3

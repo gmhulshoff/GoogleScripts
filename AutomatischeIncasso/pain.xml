@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <CstmrDrctDbtInitn>
+    <GrpHdr>
+      <MsgId>D0262014-07-12T19:07:11</MsgId>
+      <CreDtTm>2014-07-12T19:07:11</CreDtTm>
+      <NbOfTxs>3</NbOfTxs>
+      <InitgPty>
+        <Nm>Oer 't net</Nm>
+      </InitgPty>
+    </GrpHdr>
+    <PmtInf>
+      <PmtInfId>D026-FRST</PmtInfId>
+      <PmtMtd>DD</PmtMtd>
+      <PmtTpInf>
+        <SvcLvl>
+          <Cd>SEPA</Cd>
+        </SvcLvl>
+        <LclInstrm>
+          <Cd>CORE</Cd>
+        </LclInstrm>
+        <SeqTp>FRST</SeqTp>
+      </PmtTpInf>
+      <ReqdColltnDt>2014-01-06</ReqdColltnDt>
+      <Cdtr>
+        <Nm>Oer 't net</Nm>
+        <PstlAdr>
+          <Ctry>NL</Ctry>
+        </PstlAdr>
+      </Cdtr>
+      <CdtrAcct>
+        <Id>
+          <IBAN>NL09RABO0111019788</IBAN>
+        </Id>
+      </CdtrAcct>
+      <CdtrAgt>
+        <FinInstnId>
+          <BIC>RABONL2U</BIC>
+        </FinInstnId>
+      </CdtrAgt>
+      <UltmtCdtr>
+        <Nm>Oer 't net</Nm>
+      </UltmtCdtr>
+      <ChrgBr>SLEV</ChrgBr>
+      <CdtrSchmeId>
+        <Id>
+          <PrvtId>
+            <Othr>
+              <Id>NL97ZZZ401029480000</Id>
+              <SchmeNm>
+                <Prtry>SEPA</Prtry>
+              </SchmeNm>
+            </Othr>
+          </PrvtId>
+        </Id>
+      </CdtrSchmeId>
+      <DrctDbtTxInf>
+        <PmtId>
+          <EndToEndId>D026-ETT00010v1</EndToEndId>
+        </PmtId>
+        <InstdAmt Ccy="EUR">1.00</InstdAmt>
+        <DrctDbtTx>
+          <MndtRltdInf>
+            <MndtId>ETT00010v1</MndtId>
+            <DtOfSgntr>2013-12-11</DtOfSgntr>
+            <AmdmntInd>false</AmdmntInd>
+          </MndtRltdInf>
+        </DrctDbtTx>
+        <DbtrAgt>
+          <FinInstnId />
+        </DbtrAgt>
+        <Dbtr>
+          <Nm>D. Biteur</Nm>
+          <PstlAdr>
+            <Ctry>NL</Ctry>
+          </PstlAdr>
+        </Dbtr>
+        <DbtrAcct>
+          <Id>
+            <IBAN>NL13TEST0123456789</IBAN>
+          </Id>
+        </DbtrAcct>
+        <UltmtDbtr>
+          <Nm>D. Biteur</Nm>
+        </UltmtDbtr>
+        <RmtInf>
+          <Ustrd>Dit is testbericht 1</Ustrd>
+        </RmtInf>
+      </DrctDbtTxInf>
+    </PmtInf>
+    <PmtInf>
+      <PmtInfId>D026-RCUR</PmtInfId>
+      <PmtMtd>DD</PmtMtd>
+      <PmtTpInf>
+        <SvcLvl>
+          <Cd>SEPA</Cd>
+        </SvcLvl>
+        <LclInstrm>
+          <Cd>CORE</Cd>
+        </LclInstrm>
+        <SeqTp>RCUR</SeqTp>
+      </PmtTpInf>
+      <ReqdColltnDt>2014-01-06</ReqdColltnDt>
+      <Cdtr>
+        <Nm>Oer 't net</Nm>
+        <PstlAdr>
+          <Ctry>NL</Ctry>
+        </PstlAdr>
+      </Cdtr>
+      <CdtrAcct>
+        <Id>
+          <IBAN>NL09RABO0111019788</IBAN>
+        </Id>
+      </CdtrAcct>
+      <CdtrAgt>
+        <FinInstnId>
+          <BIC>RABONL2U</BIC>
+        </FinInstnId>
+      </CdtrAgt>
+      <UltmtCdtr>
+        <Nm>Oer 't net</Nm>
+      </UltmtCdtr>
+      <ChrgBr>SLEV</ChrgBr>
+      <CdtrSchmeId>
+        <Id>
+          <PrvtId>
+            <Othr>
+              <Id>NL97ZZZ401029480000</Id>
+              <SchmeNm>
+                <Prtry>SEPA</Prtry>
+              </SchmeNm>
+            </Othr>
+          </PrvtId>
+        </Id>
+      </CdtrSchmeId>
+      <DrctDbtTxInf>
+        <PmtId>
+          <EndToEndId>D026-ETT00011v1</EndToEndId>
+        </PmtId>
+        <InstdAmt Ccy="EUR">2.00</InstdAmt>
+        <DrctDbtTx>
+          <MndtRltdInf>
+            <MndtId>ETT00011v1</MndtId>
+            <DtOfSgntr>2013-12-12</DtOfSgntr>
+            <AmdmntInd>false</AmdmntInd>
+          </MndtRltdInf>
+        </DrctDbtTx>
+        <DbtrAgt>
+          <FinInstnId />
+        </DbtrAgt>
+        <Dbtr>
+          <Nm>D. Biteur</Nm>
+          <PstlAdr>
+            <Ctry>NL</Ctry>
+          </PstlAdr>
+        </Dbtr>
+        <DbtrAcct>
+          <Id>
+            <IBAN>NL13TEST0123456789</IBAN>
+          </Id>
+        </DbtrAcct>
+        <UltmtDbtr>
+          <Nm>D. Biteur</Nm>
+        </UltmtDbtr>
+        <RmtInf>
+          <Ustrd>Dit is testbericht 2</Ustrd>
+        </RmtInf>
+      </DrctDbtTxInf>
+      <DrctDbtTxInf>
+        <PmtId>
+          <EndToEndId>D026-ETT00011v1</EndToEndId>
+        </PmtId>
+        <InstdAmt Ccy="EUR">3.00</InstdAmt>
+        <DrctDbtTx>
+          <MndtRltdInf>
+            <MndtId>ETT00011v1</MndtId>
+            <DtOfSgntr>2013-12-12</DtOfSgntr>
+            <AmdmntInd>false</AmdmntInd>
+          </MndtRltdInf>
+        </DrctDbtTx>
+        <DbtrAgt>
+          <FinInstnId />
+        </DbtrAgt>
+        <Dbtr>
+          <Nm>QreaCom</Nm>
+          <PstlAdr>
+            <Ctry>NL</Ctry>
+          </PstlAdr>
+        </Dbtr>
+        <DbtrAcct>
+          <Id>
+            <IBAN>NL13TEST0123456789</IBAN>
+          </Id>
+        </DbtrAcct>
+        <UltmtDbtr>
+          <Nm>QreaCom</Nm>
+        </UltmtDbtr>
+        <RmtInf>
+          <Ustrd>Dit is testbericht 3</Ustrd>
+        </RmtInf>
+      </DrctDbtTxInf>
+    </PmtInf>
+  </CstmrDrctDbtInitn>
+</Document>
