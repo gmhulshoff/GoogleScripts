@@ -53,8 +53,19 @@ function createIncassoXml() {
     deleteDocByName(fileName);
     var file = DriveApp.createFile(Utilities.newBlob(data, MimeType.PLAIN_TEXT, fileName));
     file.setName(fileName);
+    moveFileToFolder(file, DocsList.getFolder('Sepa'));
   }
-  
+  this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Gegevens');
+  var event = {};
+  event.parameter = {
+    endtoendid : sheet.getRange("B4").getValue(),
+    incassodate : Utilities.formatDate(sheet.getRange("B5").getValue(), "CET", "yyyy-MM-dd"),
+    creationdatetime : Utilities.formatDate(sheet.getRange("B5").getValue(), "CET", "yyyy-MM-dd"),
+    initiatingparty : sheet.getRange("B1").getValue(),
+    initiatingiban : sheet.getRange("B2").getValue(),
+    initiatingbic : sheet.getRange("B3").getValue(),
+    initiatingcreditoridentifier : sheet.getRange("B4").getValue()
+  };
   saveXml(CreatePain00800102.createPainMessage(getDebtors(), event));
 };
 

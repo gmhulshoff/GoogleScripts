@@ -1,23 +1,23 @@
 function createPainMessage(debtors, event) {
    this.getDrctDbtTxInfXml = function (debtor) {
       return "<DrctDbtTxInf xmlns='" + nameSpace + "'>" +
-				"<PmtId><EndToEndId>" + event.parameter.endtoendid + "-" + debtor["mndtid"] + "</EndToEndId></PmtId>" +
-				"<InstdAmt Ccy='EUR'>" + debtor["instdamt"] + "</InstdAmt>" + 
+				"<PmtId><EndToEndId>" + event.parameter.endtoendid + "-" + debtor.mndtid + "</EndToEndId></PmtId>" +
+				"<InstdAmt Ccy='EUR'>" + debtor.instdamt + "</InstdAmt>" + 
 				"<DrctDbtTx>" + 
 					"<MndtRltdInf>" +
-						"<MndtId>" + debtor["mndtid"] + "</MndtId>" +
-						"<DtOfSgntr>" + debtor["dtofsgntr"] + "</DtOfSgntr>" +
-						"<AmdmntInd>" + debtor["amdmntind"] + "</AmdmntInd>" +
+						"<MndtId>" + debtor.mndtid + "</MndtId>" +
+						"<DtOfSgntr>" + debtor.dtofsgntr + "</DtOfSgntr>" +
+						"<AmdmntInd>" + debtor.amdmntind + "</AmdmntInd>" +
 					"</MndtRltdInf>" + 
 				"</DrctDbtTx>" +
 				"<DbtrAgt><FinInstnId/></DbtrAgt>" + 
 				"<Dbtr>" +
-					"<Nm>" + debtor["dbtrnm"] + "</Nm>" +
+					"<Nm>" + debtor.dbtrnm + "</Nm>" +
 					"<PstlAdr><Ctry>NL</Ctry></PstlAdr>" + 
 				"</Dbtr>" +
-				"<DbtrAcct><Id><IBAN>" + debtor["dbtriban"] + "</IBAN></Id></DbtrAcct>" +
-				"<UltmtDbtr><Nm>" + debtor["dbtrnm"] + "</Nm></UltmtDbtr>" +
-				"<RmtInf><Ustrd>" + debtor["dbtrustrd"] + "</Ustrd></RmtInf>" + 
+				"<DbtrAcct><Id><IBAN>" + debtor.dbtriban + "</IBAN></Id></DbtrAcct>" +
+				"<UltmtDbtr><Nm>" + debtor.dbtrnm + "</Nm></UltmtDbtr>" +
+				"<RmtInf><Ustrd>" + debtor.dbtrustrd + "</Ustrd></RmtInf>" + 
 			"</DrctDbtTxInf>";
    }
    this.getPmtInfXml = function (paymentType) {
