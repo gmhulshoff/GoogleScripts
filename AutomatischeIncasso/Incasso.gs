@@ -54,17 +54,17 @@ this.moveFileToFolder = function(file, folder) {
 function createPDF()
 {
   this.createSepaDdMandate = function (){
-    this.createPdfForm = function() {
-      var pdfForm = DocsList.createFile(personalizedForm.getAs('application/pdf'));
-      DocsList.getFileById(personalizedForm.getId()).setTrashed(true);
-      deleteDocByName(fileName);
-      pdfForm.rename(fileName + ".pdf");
-      moveFileToFolder(pdfForm, DocsList.getFolder('Sepa'));
+    this.createPdfForm = function(settings) {
+      var docId = settings.document.getId();
+      var file = DocsList.getFileById(docId);
+      deleteDocByName(settings.fileName + ".pdf");
+      var pdfForm = DocsList.createFile(file.getAs('application/pdf'));
+      DocsList.getFileById(docId).setTrashed(true);
+      moveFileToFolder(pdfForm, settings.sepaFolder);
       return pdfForm;
     }
     
     this.createPersonalizedForm = function() {
-      var folder = DocsList.getFolder('Sepa');
       this.verenigingsnaam = sheet.getRange("B1").getValue();
       this.adresClub = sheet.getRange("B8").getValue();
       this.postcodeClub = sheet.getRange("B9").getValue();
@@ -78,166 +78,24 @@ function createPDF()
       this.plaats = member["plaats"];
       this.iban = member["dbtriban"];
       
-      this.fileName = "Machtiging " + member["tennamevan"];
-      this.personalizedForm = createTemplate();
+      this.sepaFolder = DocsList.getFolder('Sepa');
+      this.fileName = "Machtiging " + this.tenNameVan;
+      this.document = DocumentApp.create(this.fileName);
+      
+      CreatePain00800102.createSignupForm(this);
+      
+      this.document.saveAndClose();
 
-      moveFileToFolder(personalizedForm, folder);
+      moveFileToFolder(this.document, this.sepaFolder);
     }
     
-    createPersonalizedForm();
-    return createPdfForm();
+    return createPdfForm(new createPersonalizedForm());
   }
  
   this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Gegevens');
   var members = getDebtors();
   for (var i = 0; this.member = members[i]; i++)
     createSepaDdMandate();
-}
-
-this.createTemplate = function() {
-  this.setDocProperties = function(body) {
-    body.setMarginBottom(margin);
-    body.setMarginTop(margin);
-    body.setMarginLeft(margin);
-    body.setMarginRight(margin);
-    var style = { };
-    style[DocumentApp.Attribute.FONT_SIZE] = 11;
-    body.setAttributes(style);
-  }
-  
-  this.addHeaderTable = function(body) {
-    this.rows = [ ['Doorlopende machtiging', '', 'SEPA'] ],
-    this.columns = [
-        {cellWidth: 450, cellColor : '#93c47d', fontColor : '#ffffff', fontSize : 24},
-        {cellWidth: 25, cellColor : '#ffffff', fontColor : '#ffffff', fontSize : 24},
-        {cellWidth: 100, cellColor : '#351c75', fontColor : '#ffffff', fontSize : 24}
-      ];
-    this.settings = { };
-    
-    setFormFieldProperties();
-  }
-  
-  this.addMainFormFieldsTable = function(body) {
-    this.rows = [ 
-        ['Incassant:', ' '],
-        ['Naam', verenigingsnaam],
-        ['Adres', adresClub],
-        ['Postcode, plaats', postcodeClub + ' ' + plaatsClub],
-        ['Incassant ID', incassantId],
-        ['Kenmerk machtiging', kenmerk],
-        ['Reden betaling', redenBetaling]
-      ];
-    this.columns = [
-        {cellWidth : 150, fontSize : 11},
-        {cellWidth : 300, fontSize : 11, fontFamily : DocumentApp.FontFamily.COURIER_NEW}
-      ];
-    this.settings = { };
-    
-    setFormFieldProperties();
-    setCellProperties(table.getCell(0, 0), {bold : true});
-  }
-  
-  this.addTextBoxTable = function(body) {
-    this.rows = [
-      ['Door ondertekening van dit formulier geeft u toestemming aan ' + verenigingsnaam + ' om doorlopende ' + 
-      'incasso-opdrachten te sturen naar uw bank om een bedrag van uw rekening af te schijven en aan uw bank om ' +
-      'doorlopend een bedrag van uw rekening af te schrijven overeenkomstig de opdracht van ' + verenigingsnaam + '.\n\n' + 
-      'Als u het niet eens bent met deze afschrijving kunt u deze laten terugboeken. Neem hiervoor binnen 8 weken na ' +
-      'afschrijving contact op met uw bank. Vraag uw bank naar de voorwaarden.']
-    ];
-    this.columns = [ { cellWidth : 575 } ];
-    this.settings = { borderWidth : 1, borderColor : '#93c47d' };
-    
-    setFormFieldProperties();
-  }
-  
-  this.addMemberFormFieldsTable = function () {
-    this.rows = [
-      ['Naam', tenNameVan],
-      ['Adres', adres],
-      ['Postcode, plaats', postcode + ' ' + plaats],
-      ['IBAN', iban]
-    ];
-    this.columns = [
-        {cellWidth : 150},
-        {cellWidth : 300, fontFamily : DocumentApp.FontFamily.COURIER_NEW}
-      ];
-    this.settings = { };
-    
-    setFormFieldProperties();
-  }
-  
-  this.addSignupTable = function(body) {
-    this.rows = [
-      ['Plaats en datum', '\n\n'],
-      [' ', ''],
-      ['Handtekekening', '\n\n'],
-    ];
-    this.columns = [
-        {cellWidth : 150},
-        {cellWidth : 300, underline : true, linespacingafter : 10}
-    ];
-    this.settings = { };
-    
-    setFormFieldProperties();
-  }
-
-  this.setFormFieldProperties = function() {
-    this.table = body.appendTable(rows);
-    table.setBorderWidth(settings.borderWidth ? settings.borderWidth : 0);
-    table.setBorderColor(settings.borderColor ? settings.borderColor : '#000000');
-    for (var row = 0; row < rows.length; row++)
-      for (var column = 0; column < columns.length; column++)
-        setCellProperties(table.getCell(row, column), columns[column]);
-  }
-
-  this.setCellProperties = function (cell, properties) {
-    cell.setBackgroundColor(properties.cellColor ? properties.cellColor : '#ffffff');
-    if (properties.cellWidth)
-      cell.setWidth(properties.cellWidth);
-    setTextProperties(cell, properties);
-  }
-  
-  this.setTextProperties = function(cell, properties) {
-    var text = cell.editAsText();
-    if (text.getText().length == 0)
-      return;
-    setLineSpacing(cell, properties);
-    text.setForegroundColor(0, text.getText().length  - 1, properties.fontColor ? properties.fontColor : '#000000' );
-    text.setFontSize(properties.fontSize ? properties.fontSize : 11);
-    text.setBold(properties.bold ? true : false);
-    if (properties.fontFamily)
-      text.setFontFamily(properties.fontFamily);
-  }
-
-  this.setLineSpacing = function(cell, properties) {
-     var searchResult = null;
-     var lastParagraph = null;
-     while (searchResult = cell.findElement(DocumentApp.ElementType.PARAGRAPH, searchResult)) {
-       var paragraph = searchResult.getElement().asParagraph();
-       paragraph.setSpacingBefore(0);
-       paragraph.setSpacingAfter(settings.linespacingafter ? settings.linespacingafter : 0);
-       paragraph.setLineSpacing(settings.linespacing ? settings.linespacing : 1);
-       lastParagraph = paragraph;
-     }
-     if (lastParagraph && properties.underline)
-       lastParagraph.appendHorizontalRule();
-  }
-  
-  deleteDocByName(fileName);
-  this.margin = 20;
-  var document = DocumentApp.create(fileName);
-  var body = document.getBody();
-  setDocProperties(body);
-  addHeaderTable(body);
-  addMainFormFieldsTable(body);
-  addTextBoxTable(body);
-  addMemberFormFieldsTable(body);
-  addSignupTable(body);
-  
-  document.saveAndClose();
-  
-  return document;
 }
 
 function onOpen() {
