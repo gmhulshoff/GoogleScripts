@@ -78,11 +78,12 @@ function createPDF()
       this.plaats = member["plaats"];
       this.iban = member["dbtriban"];
       
+      this.fileName = "Machtiging " + member["tennamevan"];
       this.personalizedForm = createTemplate();
+
       moveFileToFolder(personalizedForm, folder);
     }
     
-    this.fileName = "Machtiging " + tenNameVan;
     createPersonalizedForm();
     return createPdfForm();
   }
