@@ -5,15 +5,19 @@ this.deleteDocByName = function (fileName){
       DocsList.getFileById(docs[n].getId()).setTrashed(true);
 }
 
+this.getValues = function(sheetName) {
+  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadSheet.getSheetByName(sheetName);
+  var rows = sheet.getDataRange();
+  var values = rows.getValues();
+  var headers = values.shift();
+  return values;
+}
+
 this.getDebtors = function() {
   var debtors = [];
-  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
-  var debtorSheet = spreadSheet.getSheetByName('Debiteuren');
-  var settingsSheet = spreadSheet.getSheetByName('Gegevens');
-  var debtorRows = debtorSheet.getDataRange();
-  var debtorValues = debtorRows.getValues();
-  var debtorHeaders = debtorValues.shift();
-  for (var i = 0, row; row = debtorValues[i]; i++)
+  var values = getValues('Debiteuren');
+  for (var i = 0, row; row = values[i]; i++)
 	debtors.push({
       instdamt: row[0], 
       mndtid: row[1], 
@@ -22,14 +26,25 @@ this.getDebtors = function() {
       amdmntind: row[4], 
       dbtrnm: row[5], 
       dbtriban: row[6], 
-      dbtrustrd: row[7],
-      adres: row[8],
-      postcode: row[9],
-      plaats: row[10],
-      tennamevan: row[11],
-      email: row[12]
+      dbtrustrd: row[7]
     });
   return debtors;
+}
+
+this.getMembers = function() {
+  var members = [];
+  var values = getValues('AspirantLeden');
+  for (var i = 0, row; row = values[i]; i++)
+	members.push({
+      dbtrnm: row[0], 
+      dbtriban: row[1], 
+      adres: row[2],
+      postcode: row[3],
+      plaats: row[4],
+      email: row[5]
+    });
+
+  return members;
 }
 
 function createIncassoXml() {
@@ -51,16 +66,15 @@ this.moveFileToFolder = function(file, folder) {
   docsFile.addToFolder(folder);
 }
 
-function createPDF()
+function sendDirectDebitPermissionForms()
 {
-  this.createSepaDdMandate = function (){
+  this.createSepaDdMandate = function () {
     this.createPdfForm = function(settings) {
       var docId = settings.document.getId();
       var file = DocsList.getFileById(docId);
-      deleteDocByName(settings.fileName + ".pdf");
       var pdfForm = DocsList.createFile(file.getAs('application/pdf'));
-      DocsList.getFileById(docId).setTrashed(true);
       moveFileToFolder(pdfForm, settings.sepaFolder);
+      DocsList.getFileById(docId).setTrashed(true);
       return pdfForm;
     }
     
@@ -72,14 +86,14 @@ function createPDF()
       this.incassantId = sheet.getRange("B12").getValue();
       this.kenmerk = sheet.getRange("B13").getValue();
       this.redenBetaling = sheet.getRange("B14").getValue();
-      this.tenNameVan = member["tennamevan"];
-      this.adres = member["adres"];
-      this.postcode = member["postcode"];
-      this.plaats = member["plaats"];
-      this.iban = member["dbtriban"];
+      this.tenNameVan = member.dbtrnm;
+      this.adres = member.adres;
+      this.postcode = member.postcode;
+      this.plaats = member.plaats;
+      this.iban = member.dbtriban;
       
       this.sepaFolder = DocsList.getFolder('Sepa');
-      this.fileName = "Machtiging " + this.tenNameVan;
+      this.fileName = "Machtiging automatische incasso";
       this.document = DocumentApp.create(this.fileName);
       
       CreatePain00800102.createSignupForm(this);
@@ -89,20 +103,34 @@ function createPDF()
       moveFileToFolder(this.document, this.sepaFolder);
     }
     
-    return createPdfForm(new createPersonalizedForm());
+    this.settings = new this.createPersonalizedForm();
+    this.pdfForm = this.createPdfForm(this.settings);
+  }
+  
+  this.sendDirectDebitPermissionForm = function() {
+    var info = new createSepaDdMandate();
+      
+    var advancedArgs = {name:info.settings.verenigingsnaam, htmlBody: '', attachments: [info.pdfForm.getAs(MimeType.PDF)]}; 
+    var emailText = 'Beste ' + member.dbtrnm + ',\n\n';
+    emailText += 'Bij deze het formulier voor automatische machtiging voor het incasseren van de contributie.\n';
+    emailText += 'U kunt dit formulier uitprinten, invullen en inleveren bij de penningmeester.\n\n';
+    emailText += 'Met vriendelijke groeten,\n';
+    emailText += 'De penningmeester.'
+    MailApp.sendEmail(member.dbtrnm + " <" + member.email + ">", 'Machtiging automatische incasso.', emailText, advancedArgs);
+    DocsList.getFileById(info.pdfForm.getId()).setTrashed(true);
   }
  
   this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Gegevens');
-  var members = getDebtors();
+  var members = getMembers();
   for (var i = 0; this.member = members[i]; i++)
-    createSepaDdMandate();
+    this.sendDirectDebitPermissionForm();
 }
 
 function onOpen() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var entries = [
     { name : "Maak Incassobestand", functionName : "createIncassoXml" },
-    { name : "Maak Machtigings PDF", functionName : "createPDF" },
+    { name : "Email automatische incasso formulieren", functionName : "sendDirectDebitPermissionForms" },
   ];
   spreadsheet.addMenu("Incasso", entries);
 };
