@@ -112,7 +112,7 @@ function createIncassoXml() {
   }
   this.mailXmlToMe = function(xmlFile) {
     var settings = getSettingValues('Gegevens');
-    var advancedArgs = {name:settings.initiatingparty, htmlBody: '', attachments: [xmlFile.getAs(MimeType.PLAIN_TEXT)]}; 
+    var advancedArgs = {name:settings.initiatingparty, htmlBody: '', attachments: [xmlFile]}; 
     var emailText = 'Beste penningmeester,\n\n';
     emailText += 'Bij deze de incasso - xml die u naar uw bank kunt versturen.\n';
     emailText += 'U kunt dit bestand valideren bij de volgende url: https://ing-fvt.liaison.com/welcome.do\n';
