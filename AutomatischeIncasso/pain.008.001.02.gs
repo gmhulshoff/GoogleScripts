@@ -54,7 +54,7 @@ function createPainMessage(debtors, event) {
       return "<Document xmlns='" + nameSpace + "' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>" +
 			"<CstmrDrctDbtInitn>" +
 				"<GrpHdr>" +
-					"<MsgId>" + event.parameter.endtoendid + event.parameter.creationdatetime + "</MsgId>" +
+					"<MsgId>" + event.parameter.endtoendid + event.parameter.creationdatetime.split('T')[0] + "</MsgId>" +
 					"<CreDtTm>" + event.parameter.creationdatetime + "</CreDtTm>" +
 					"<NbOfTxs>" + Utilities.formatString('%d', nbOfTxsFRST + nbOfTxsRCUR) + "</NbOfTxs>" +
 					"<InitgPty><Nm>" + event.parameter.initiatingparty + "</Nm></InitgPty>" +

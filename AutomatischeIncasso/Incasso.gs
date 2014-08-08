@@ -9,65 +9,90 @@ this.getValues = function(sheetName) {
   var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadSheet.getSheetByName(sheetName);
   var rows = sheet.getDataRange();
+  this.values = rows.getValues();
+  this.headers = this.values.shift();
+}
+
+this.getValue = function(val, key) {
+  if (key == 'incassodate' || key == 'dtofsgntr')
+    return Utilities.formatDate(val, 'CET', 'yyyy-MM-dd');
+  else if (key == 'creationdatetime')
+    return Utilities.formatDate(val, 'CET', "yyyy-MM-dd'T'HH:mm:ss'Z'");
+  else
+    return val;
+}
+
+this.readSettings = function(values, map) {
+  var setting = {};
+  for (var i = 0, pair; pair = values[i]; i++)
+    if (pair[0] && pair[0] != '' && map[pair[0]])
+      setting[map[pair[0]]] = getValue(pair[1], map[pair[0]]);
+  return setting;
+}
+
+this.getSettingValues = function(sheetName) {
+  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadSheet.getSheetByName(sheetName);
+  var rows = sheet.getDataRange();
   var values = rows.getValues();
-  var headers = values.shift();
-  return values;
+  var map = {
+    'Verenigingsnaam' : 'initiatingparty',
+    'IBAN' : 'initiatingiban',
+    'BIC' : 'initiatingbic',
+    'Kenmerk' : 'endtoendid',
+    'Incassant ID' : 'initiatingcreditoridentifier',
+    'Datum afschrijving' : 'incassodate',
+    'Datum aangemaakt' : 'creationdatetime',
+    'Adres' : 'adresClub',
+    'Postcode' : 'postcodeClub',
+    'Plaats' : 'plaatsClub',
+    'Reden betaling' : 'redenBetaling',
+    'Email' : 'email'
+  };
+  return readSettings(values, map);
+}
+
+this.readRecord = function(map, headers, row) {
+  var record = {};
+  for (var i = 0, key; key = map[headers[i]]; i++)
+    if (key)
+      record[key] = getValue(row[i], key);
+  return record;
+}
+
+this.readRows = function(info, map) {
+  var rows = [];
+  for (var i = 0, row; row = info.values[i]; i++)
+    rows.push(this.readRecord(map, info.headers, row));
+  Logger.log(rows);
+  return rows;
 }
 
 this.getDebtors = function() {
-  var debtors = [];
-  var values = getValues('Debiteuren');
-  for (var i = 0, row; row = values[i]; i++)
-	debtors.push({
-      instdamt: row[0], 
-      mndtid: row[1], 
-      seqtp: row[2], 
-      dtofsgntr: Utilities.formatDate(row[3], "CET", "yyyy-MM-dd"), 
-      amdmntind: row[4], 
-      dbtrnm: row[5], 
-      dbtriban: row[6], 
-      dbtrustrd: row[7]
-    });
-  return debtors;
+  var map = {
+    'Bedrag' : 'instdamt',
+    'Mandaat ID' : 'mndtid',
+    'Eerste of herhaling' : 'seqtp',
+    'Mandaatdatum' : 'dtofsgntr',
+    'Betaling namens' : 'amdmntind',
+    'Naam' : 'dbtrnm',
+    'IBAN' : 'dbtriban',
+    'Bericht' : 'dbtrustrd'
+  };
+  return readRows(new getValues('Debiteuren'), map);
 }
 
 this.getMembers = function() {
-  var members = [];
-  var values = getValues('AspirantLeden');
-  for (var i = 0, row; row = values[i]; i++)
-	members.push({
-      dbtrnm: row[0], 
-      dbtriban: row[1], 
-      adres: row[2],
-      postcode: row[3],
-      plaats: row[4],
-      email: row[5]
-    });
-
-  return members;
-}
-
-function createIncassoXml() {
-  this.saveXml = function (data) {
-    var fileName = 'incasso.xml';
-    deleteDocByName(fileName);
-    var file = DriveApp.createFile(Utilities.newBlob(data, MimeType.PLAIN_TEXT, fileName));
-    file.setName(fileName);
-    moveFileToFolder(file, DocsList.getFolder('Sepa'));
-  }
-  this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Gegevens');
-  var event = {};
-  event.parameter = {
-    endtoendid : sheet.getRange("B4").getValue(),
-    incassodate : Utilities.formatDate(sheet.getRange("B5").getValue(), "CET", "yyyy-MM-dd"),
-    creationdatetime : Utilities.formatDate(sheet.getRange("B5").getValue(), "CET", "yyyy-MM-dd"),
-    initiatingparty : sheet.getRange("B1").getValue(),
-    initiatingiban : sheet.getRange("B2").getValue(),
-    initiatingbic : sheet.getRange("B3").getValue(),
-    initiatingcreditoridentifier : sheet.getRange("B4").getValue()
+  var map = {
+    'Naam' : 'dbtrnm',
+    'IBAN' : 'dbtriban',
+    'Adres' : 'adres',
+    'Postcode' : 'postcode',
+    'Plaats' : 'plaats',
+    'Email' : 'email',
   };
-  saveXml(CreatePain00800102.createPainMessage(getDebtors(), event));
-};
+  return readRows(new getValues('AspirantLeden'), map);
+}
 
 this.moveFileToFolder = function(file, folder) {
   var docsFile = DocsList.getFileById(file.getId());
@@ -76,6 +101,51 @@ this.moveFileToFolder = function(file, folder) {
     docsFile.removeFromFolder(folders[n]);
   docsFile.addToFolder(folder);
 }
+
+function createIncassoXml() {
+  this.saveXml = function (data) {
+    var fileName = 'incasso.xml';
+    var file = DriveApp.createFile(Utilities.newBlob(data, MimeType.PLAIN_TEXT, fileName));
+    file.setName(fileName);
+    moveFileToFolder(file, DocsList.getFolder('Sepa'));
+    return file;
+  }
+  this.mailXmlToMe = function(xmlFile) {
+    var settings = getSettingValues('Gegevens');
+    var advancedArgs = {name:settings.initiatingparty, htmlBody: '', attachments: [xmlFile.getAs(MimeType.PLAIN_TEXT)]}; 
+    var emailText = 'Beste penningmeester,\n\n';
+    emailText += 'Bij deze de incasso - xml die u naar uw bank kunt versturen.\n';
+    emailText += 'U kunt dit bestand valideren bij de volgende url: https://ing-fvt.liaison.com/welcome.do\n';
+    emailText += 'Hier kunt u inloggen met als gebruikersnaam ING10 en als wachtwootd Format10.\n';
+    emailText += 'Vervolgens kunt u de optie kiezen onder - European direct debit - pain.008.001.02 - The Netherlands SEPA Direct Debit (BvN).\n';
+    emailText += 'En daar het bijgevoegde bestand uploaden en laten valideren.\n\n';
+    emailText += 'Met vriendelijke groeten,\n';
+    emailText += 'De penningmeester.'
+    MailApp.sendEmail(settings.initiatingparty + " <" + settings.email + ">", 'Automatisch incasso bestand.', emailText, advancedArgs);
+    DocsList.getFileById(xmlFile.getId()).setTrashed(true);
+  }
+
+  this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Gegevens');
+  var event = {};
+  var map = {
+    initiatingparty : 'Verenigingsnaam',
+    initiatingiban : 'IBAN',
+    initiatingbic : 'BIC',
+    endtoendid : 'Kenmerk',
+  };
+  var settings = getSettingValues('Gegevens');
+  event.parameter = {
+    initiatingparty : settings.initiatingparty,
+    initiatingiban : settings.initiatingiban,
+    initiatingbic : settings.initiatingbic,
+    endtoendid : settings.endtoendid,
+    initiatingcreditoridentifier : settings.initiatingcreditoridentifier,
+    incassodate : settings.incassodate,
+    creationdatetime : settings.creationdatetime
+  };
+  var xmlFile = saveXml(CreatePain00800102.createPainMessage(getDebtors(), event));
+  mailXmlToMe(xmlFile);
+};
 
 function sendDirectDebitPermissionForms()
 {
@@ -90,13 +160,14 @@ function sendDirectDebitPermissionForms()
     }
     
     this.createPersonalizedForm = function() {
-      this.verenigingsnaam = sheet.getRange("B1").getValue();
-      this.adresClub = sheet.getRange("B8").getValue();
-      this.postcodeClub = sheet.getRange("B9").getValue();
-      this.plaatsClub = sheet.getRange("B10").getValue();
-      this.incassantId = sheet.getRange("B12").getValue();
-      this.kenmerk = sheet.getRange("B13").getValue();
-      this.redenBetaling = sheet.getRange("B14").getValue();
+      var settings = getSettingValues('Gegevens');
+      this.verenigingsnaam = settings.initiatingparty;
+      this.adresClub = settings.adresClub;
+      this.postcodeClub = settings.postcodeClub;
+      this.plaatsClub = settings.plaatsClub;
+      this.incassantId = settings.initiatingcreditoridentifier;
+      this.kenmerk = settings.endtoendid;
+      this.redenBetaling = settings.redenBetaling;
       this.tenNameVan = member.dbtrnm;
       this.adres = member.adres;
       this.postcode = member.postcode;
@@ -106,6 +177,8 @@ function sendDirectDebitPermissionForms()
       this.sepaFolder = DocsList.getFolder('Sepa');
       this.fileName = "Machtiging automatische incasso";
       this.document = DocumentApp.create(this.fileName);
+      
+      Logger.log(this);
       
       CreatePain00800102.createSignupForm(this);
       
@@ -140,7 +213,7 @@ function sendDirectDebitPermissionForms()
 function onOpen() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var entries = [
-    { name : "Maak Incassobestand", functionName : "createIncassoXml" },
+    { name : "Stuur Incassobestand naar mezelf", functionName : "createIncassoXml" },
     { name : "Email automatische incasso formulieren", functionName : "sendDirectDebitPermissionForms" },
   ];
   spreadsheet.addMenu("Incasso", entries);
