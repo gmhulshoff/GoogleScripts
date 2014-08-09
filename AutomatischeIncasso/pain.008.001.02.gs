@@ -78,7 +78,8 @@ function createPainMessage(debtors, event) {
    }
    
    for (var i = 0, debtor; debtor = debtors[i]; i++)
-     addTransaction(debtor["seqtp"] == firstFlag ? PmtInfFRST : PmtInfRCUR);
+     if (debtor.dbtriban != '')
+       addTransaction(debtor["seqtp"] == firstFlag ? PmtInfFRST : PmtInfRCUR);
    
    var rootDocument = XmlService.parse(getDocumentXml());
    var cstmrDrctDbtInitnXml = rootDocument.getRootElement().getChild("CstmrDrctDbtInitn", ns);

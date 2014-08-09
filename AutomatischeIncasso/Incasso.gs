@@ -1,3 +1,8 @@
+this.logInSpreadSheet = function(msg) {
+  var sheet = spreadSheet.getSheetByName('Gegevens');
+  sheet.getRange("A15").setValue(msg);
+}
+
 this.deleteDocByName = function (fileName){
   var docs = DocsList.find(fileName);
   for (var n in docs)
@@ -6,7 +11,6 @@ this.deleteDocByName = function (fileName){
 }
 
 this.getValues = function(sheetName) {
-  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadSheet.getSheetByName(sheetName);
   var rows = sheet.getDataRange();
   this.values = rows.getValues();
@@ -18,6 +22,8 @@ this.getValue = function(val, key) {
     return Utilities.formatDate(val, 'CET', 'yyyy-MM-dd');
   else if (key == 'creationdatetime')
     return Utilities.formatDate(val, 'CET', "yyyy-MM-dd'T'HH:mm:ss'Z'");
+  else if (key == 'dbtrnm')
+    return val.replace(/[^a-zA-Z0-9\/-?:().,'+ ]/g, '?');
   else
     return val;
 }
@@ -31,7 +37,6 @@ this.readSettings = function(values, map) {
 }
 
 this.getSettingValues = function(sheetName) {
-  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadSheet.getSheetByName(sheetName);
   var rows = sheet.getDataRange();
   var values = rows.getValues();
@@ -64,7 +69,6 @@ this.readRows = function(info, map) {
   var rows = [];
   for (var i = 0, row; row = info.values[i]; i++)
     rows.push(this.readRecord(map, info.headers, row));
-  Logger.log(rows);
   return rows;
 }
 
@@ -103,6 +107,7 @@ this.moveFileToFolder = function(file, folder) {
 }
 
 function createIncassoXml() {
+  this.spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   this.saveXml = function (data) {
     var fileName = 'incasso.xml';
     var file = DriveApp.createFile(Utilities.newBlob(data, MimeType.PLAIN_TEXT, fileName));
@@ -125,7 +130,7 @@ function createIncassoXml() {
     DocsList.getFileById(xmlFile.getId()).setTrashed(true);
   }
 
-  this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Gegevens');
+  this.sheet = spreadSheet.getSheetByName('Gegevens');
   var event = {};
   var map = {
     initiatingparty : 'Verenigingsnaam',
@@ -149,65 +154,75 @@ function createIncassoXml() {
 
 function sendDirectDebitPermissionForms()
 {
-  this.createSepaDdMandate = function () {
-    this.createPdfForm = function(settings) {
-      var docId = settings.document.getId();
-      var file = DocsList.getFileById(docId);
-      var pdfForm = DocsList.createFile(file.getAs('application/pdf'));
-      moveFileToFolder(pdfForm, settings.sepaFolder);
-      DocsList.getFileById(docId).setTrashed(true);
-      return pdfForm;
-    }
+    this.spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+    this.startNewBatch = function(i) { return (i % 50) == 0; }
+    this.formatNumber = function(i) { return (i < 10 ? '0' : '') + (i < 100 ? '0' : '') + i; }
+    this.addPersonalizedForm = function(i, settings, member) {
+    this.verenigingsnaam = settings.initiatingparty;
+    this.adresClub = settings.adresClub;
+    this.postcodeClub = settings.postcodeClub;
+    this.plaatsClub = settings.plaatsClub;
+    this.incassantId = settings.initiatingcreditoridentifier;
+    this.kenmerk = settings.endtoendid;
+    this.redenBetaling = settings.redenBetaling;
     
-    this.createPersonalizedForm = function() {
-      var settings = getSettingValues('Gegevens');
-      this.verenigingsnaam = settings.initiatingparty;
-      this.adresClub = settings.adresClub;
-      this.postcodeClub = settings.postcodeClub;
-      this.plaatsClub = settings.plaatsClub;
-      this.incassantId = settings.initiatingcreditoridentifier;
-      this.kenmerk = settings.endtoendid;
-      this.redenBetaling = settings.redenBetaling;
-      this.tenNameVan = member.dbtrnm;
-      this.adres = member.adres;
-      this.postcode = member.postcode;
-      this.plaats = member.plaats;
-      this.iban = member.dbtriban;
-      
-      this.sepaFolder = DocsList.getFolder('Sepa');
-      this.fileName = "Machtiging automatische incasso";
-      this.document = DocumentApp.create(this.fileName);
-      
-      Logger.log(this);
-      
-      CreatePain00800102.createSignupForm(this);
-      
-      this.document.saveAndClose();
-
-      moveFileToFolder(this.document, this.sepaFolder);
-    }
+    this.tenNameVan = member.dbtrnm;
+    this.adres = member.adres;
+    this.postcode = member.postcode;
+    this.plaats = member.plaats;
+    this.iban = member.dbtriban;
     
-    this.settings = new this.createPersonalizedForm();
-    this.pdfForm = this.createPdfForm(this.settings);
+    this.document = addNewDocumentToBatch();
+    
+    logInSpreadSheet(i);
+    
+    CreatePain00800102.createSignupForm(this);
   }
   
-  this.sendDirectDebitPermissionForm = function() {
-    var info = new createSepaDdMandate();
-      
-    var advancedArgs = {name:info.settings.verenigingsnaam, htmlBody: '', attachments: [info.pdfForm.getAs(MimeType.PDF)]}; 
-    var emailText = 'Beste ' + member.dbtrnm + ',\n\n';
-    emailText += 'Bij deze het formulier voor automatische machtiging voor het incasseren van de contributie.\n';
-    emailText += 'U kunt dit formulier uitprinten, invullen en inleveren bij de penningmeester.\n\n';
+  this.sendDirectDebitPermissionForm = function(settings) {
+    var advancedArgs = {name:settings.verenigingsnaam, htmlBody: '', attachments: blobs}; 
+    var emailText = 'Beste penningmeeser,\n\n';
+    emailText += 'Bij deze de formulieren voor automatische machtiging voor het incasseren van de contributie.\n\n';
     emailText += 'Met vriendelijke groeten,\n';
     emailText += 'De penningmeester.'
-    MailApp.sendEmail(member.dbtrnm + " <" + member.email + ">", 'Machtiging automatische incasso.', emailText, advancedArgs);
-    DocsList.getFileById(info.pdfForm.getId()).setTrashed(true);
+    MailApp.sendEmail(settings.initiatingparty + " <" + settings.email + ">", "Machtiging automatische incasso", emailText, advancedArgs);
   }
- 
-  this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Gegevens');
-  var members = getMembers();
-  for (var i = 0; this.member = members[i]; i++)
-    this.sendDirectDebitPermissionForm();
+  
+  this.createMemberSignupFormsDocument = function(settings) {
+    this.saveDocument = function() {
+      if (document == null) return;
+      document.saveAndClose();
+      blobs.push(document.getAs(MimeType.PDF));
+      DocsList.getFileById(document.getId()).setTrashed(true);
+    }
+    
+    this.addPageBreakToCurrenDocument = function() {
+      document.appendPageBreak();
+      return document;
+    }
+    
+    this.addNewDocumentToBatch = function() {
+      if (!startNewBatch(i)) 
+        return addPageBreakToCurrenDocument();
+      saveDocument();
+      return DocumentApp.create("Machtiging automatische incasso (" + formatNumber(i + 1) + '-' + formatNumber(Math.min(totalCount, i + 50)) + ")");
+    }
+    
+    var members = getMembers();
+    var blobs = [];
+    this.document = null;
+    var totalCount = members.length;
+
+    for (var i = 0, member; member = members[i]; i++)
+      addPersonalizedForm(i, settings, member);
+
+    saveDocument();
+    return blobs;
+  }
+
+  var settings = getSettingValues('Gegevens');
+  var blobs = this.createMemberSignupFormsDocument(settings);  
+  sendDirectDebitPermissionForm(settings);
 }
 
 function onOpen() {

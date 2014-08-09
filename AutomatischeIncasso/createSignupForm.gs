@@ -4,9 +4,6 @@ function createSignupForm(settings) {
     body.setMarginTop(margin);
     body.setMarginLeft(margin);
     body.setMarginRight(margin);
-    var style = { };
-    style[DocumentApp.Attribute.FONT_SIZE] = 11;
-    body.setAttributes(style);
   }
   
   this.addHeader = function() {
